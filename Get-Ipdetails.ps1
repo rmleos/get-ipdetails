@@ -48,32 +48,36 @@ function Get-Ipdetails {
         {
         $object | Add-Member -MemberType NoteProperty -Name $column.Name -Value $lookupitem.($column.Name)
         }
-
         #Preform DNS lookup
-        $lookup = Resolve-DnsName $IP
-        #Gets column names
-        $lookupcolumns = $lookup | Select-Object Name,NameHost,Section,Type,TTL | Get-Member -MemberType NoteProperty | Select-Object Name
-        #Adds columns and data to array
-        foreach ($column in $lookupcolumns)
+        $lookup = Resolve-DnsName $IP -ErrorAction SilentlyContinue
+        #Check if DNS lookup returned data
+        if (!!$lookup)
         {
-            $object | Add-Member -MemberType NoteProperty -Name ("DNS"+($column.Name)) -Value $lookup.($column.Name)
+            #Gets column names
+            $lookupcolumns = $lookup | Select-Object Name,NameHost,Section,Type,TTL | Get-Member -MemberType NoteProperty | Select-Object Name
+            #Adds columns and data to array
+            foreach ($column in $lookupcolumns)
+            {
+                $object | Add-Member -MemberType NoteProperty -Name ("DNS"+($column.Name)) -Value $lookup.($column.Name)
+            }
         }
-
         #Checks for Secondary DNS Lookup
         if ($SecondaryDNSLookupServer) {
-            $secondarylookup = Resolve-DnsName $IP -Server $SecondaryDNSLookupServer
-            #Gets column names
-            $secondarylookupcolumns = $secondarylookup | Select-Object Name,NameHost,Section,Type,TTL | Get-Member -MemberType NoteProperty | Select-Object Name
-            #Adds columns and data to array
-            foreach ($column in $secondarylookupcolumns)
-            {
-                $object | Add-Member -MemberType NoteProperty -Name ("SecondaryDNS"+($column.Name)) -Value $secondarylookup.($column.Name)
-            }
-
+            $secondarylookup = Resolve-DnsName $IP -Server $SecondaryDNSLookupServer -ErrorAction SilentlyContinue
+                #Check if Secondary DNS lookup returned data
+                if (!!$secondarylookup)
+                {
+                    #Gets column names
+                    $secondarylookupcolumns = $secondarylookup | Select-Object Name,NameHost,Section,Type,TTL | Get-Member -MemberType NoteProperty | Select-Object Name
+                    #Adds columns and data to array
+                    foreach ($column in $secondarylookupcolumns)
+                    {
+                        $object | Add-Member -MemberType NoteProperty -Name ("SecondaryDNS"+($column.Name)) -Value $secondarylookup.($column.Name)
+                    }
+                }
         }
-
-        #Check for AD computer lookup
-        if ($ADcomputerLookup) {
+        #Check for AD computer if DNS lookup returned data
+        if ($ADcomputerLookup -and !!$lookup) {
             Import-Module ActiveDirectory
             #Get list of domains in forest
             $domains = (Get-ADForest).domains
@@ -94,6 +98,8 @@ function Get-Ipdetails {
         #Adds IP data to collection array
         $collection += $object
     }
+    
+    #Export results 
     if ($CSVExportPath)
     {
         $collection | Export-Csv -Path $CSVExportPath
