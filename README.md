@@ -9,6 +9,6 @@
 |-ADcomputerLookup          |Select to preform lookup of IP in Active Directory. Local computer must be domain joined and have Active Directory 
 module installed.
 
-##Command Example:
+## Command Example:
 
 Get-Ipdetails -CSVPath C:\Users\username\Documents\AllOpenIPs.csv -IPColumnName IP -ADcomputerLookup -SecondaryDNSLookupServer 1.1.1.1  -CSVExportPath C:\Users\username\Documents\AllOpenIP_DetailedReport.csv
