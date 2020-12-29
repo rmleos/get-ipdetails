@@ -6,8 +6,7 @@
 |-IPColumnName              |The column name that contains the IP that will be used to preform the lookups in the detailed report.
 |-SecondaryDNSLookupServer  |The IP of a secondary DNS server to preform DNS lookup that is not using local DNS.
 |-CSVExportPath             |The full path to export the IP detial results.
-|-ADcomputerLookup          |Select to preform lookup of IP in Active Directory. Local computer must be domain joined and have Active Directory 
-module installed.
+|-ADcomputerLookup          |Select to preform lookup of IP in Active Directory. Local computer must be domain joined and have Active Directory module installed.
 
 ## Command Example:
 
