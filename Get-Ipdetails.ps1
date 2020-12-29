@@ -36,7 +36,7 @@ function Get-Ipdetails {
     )
     $file = Import-Csv $CSVPath
     #Array to imput all IP data
-    $collection = @()
+    $collection=@([pscustomobject]@{IP='';Port='';Protocol='';Status='';DNSName='';DNSNameHost='';DNSSection='';DNSTTL='';DNSType='';SecondaryDNSName='';SecondaryDNSNameHost='';SecondaryDNSSection='';SecondaryDNSTTL='';SecondaryDNSType='';ADComputerDistinguishedName='';ADComputerDNSHostName='';ADComputerEnabled='';ADComputerIPv4Address='';ADComputerName='';ADComputerObjectGUID='';ADComputerSamAccountName='';ADComputerSID=''})
     foreach ($lookupitem in $file) {
         #Get IP item for lookup
         $IP = $lookupitem.$IPColumnName
