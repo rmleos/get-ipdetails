@@ -77,15 +77,18 @@ function Get-Ipdetails {
                 }
         }
         #Check for AD computer if DNS lookup returned data
-        if ($ADcomputerLookup -and !!$lookup) {
+        if ($ADcomputerLookup) {
             Import-Module ActiveDirectory
             #Get list of domains in forest
             $domains = (Get-ADForest).domains
             $pos = $lookup.NameHost.IndexOf(".")
             $domainpart = $lookup.NameHost.Substring($pos+1)
+            #Check client host part against AD domains and will do direct domain lookup 
             if ($domains -contains $domainpart)
             {
-                $adlookup = Get-ADComputer -Filter ("DNSHostName -like "+'"'+($lookup.NameHost)+'"') -Server $domainpart
+                #$filter = "'IPv4Address -eq "+'"'+$IP+'"'+"'"
+                $adlookup = Get-ADComputer -Filter {IPv4Address -eq $IP} -Server $domainpart
+                #$adlookup = Get-ADComputer -Filter ("DNSHostName -like "+'"'+($lookup.NameHost)+'"') -Server $domainpart
                 #Gets column names
                 $adlookupcolumns = $adlookup | Select-Object DistinguishedName,DNSHostName,Enabled,IPv4Address,Name,ObjectGUID,SamAccountName,SID | Get-Member -MemberType NoteProperty | Select-Object Name
                 #Adds columns and data to array
@@ -93,6 +96,24 @@ function Get-Ipdetails {
                 {
                     $object | Add-Member -MemberType NoteProperty -Name ("ADComputer"+($column.Name)) -Value $adlookup.($column.Name)
                 }
+            }
+            else
+            {
+               #Will try looking up IP in each AD domain
+               foreach ($domain in $domains)
+               {
+                   $adlookup = Get-ADComputer -Filter {IPv4Address -eq $IP} -Server $domain -ErrorAction SilentlyContinue
+                   #Adds columns and data to array
+                    if (!!$adlookup)
+                    {                   
+                       #Gets column names
+                       $adlookupcolumns = $adlookup | Select-Object DistinguishedName,DNSHostName,Enabled,IPv4Address,Name,ObjectGUID,SamAccountName,SID | Get-Member -MemberType NoteProperty | Select-Object Name
+                       foreach ($column in $adlookupcolumns)
+                       {
+                           $object | Add-Member -MemberType NoteProperty -Name ("ADComputer"+($column.Name)) -Value $adlookup.($column.Name)
+                       }
+                    }
+               } 
             }
         }
         #Adds IP data to collection array
@@ -102,7 +123,7 @@ function Get-Ipdetails {
     #Export results 
     if ($CSVExportPath)
     {
-        $collection | Export-Csv -Path $CSVExportPath
+        $collection | Export-Csv -Path $CSVExportPath -NoTypeInformation
     }
     else
     {
