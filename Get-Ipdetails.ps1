@@ -54,11 +54,11 @@ function Get-Ipdetails {
         if (!!$lookup)
         {
             #Gets column names
-            $lookupcolumns = $lookup | Select-Object Name,NameHost,Section,Type,TTL | Get-Member -MemberType NoteProperty | Select-Object Name
+            $lookupcolumns = $lookup[0] | Select-Object Name,NameHost,Section,Type,TTL | Get-Member -MemberType NoteProperty | Select-Object Name
             #Adds columns and data to array
             foreach ($column in $lookupcolumns)
             {
-                $object | Add-Member -MemberType NoteProperty -Name ("DNS"+($column.Name)) -Value $lookup.($column.Name)
+                $object | Add-Member -MemberType NoteProperty -Name ("DNS"+($column.Name)) -Value $lookup[0].($column.Name)
             }
         }
         #Checks for Secondary DNS Lookup
@@ -68,11 +68,11 @@ function Get-Ipdetails {
                 if (!!$secondarylookup)
                 {
                     #Gets column names
-                    $secondarylookupcolumns = $secondarylookup | Select-Object Name,NameHost,Section,Type,TTL | Get-Member -MemberType NoteProperty | Select-Object Name
+                    $secondarylookupcolumns = $secondarylookup[0] | Select-Object Name,NameHost,Section,Type,TTL | Get-Member -MemberType NoteProperty | Select-Object Name
                     #Adds columns and data to array
                     foreach ($column in $secondarylookupcolumns)
                     {
-                        $object | Add-Member -MemberType NoteProperty -Name ("SecondaryDNS"+($column.Name)) -Value $secondarylookup.($column.Name)
+                        $object | Add-Member -MemberType NoteProperty -Name ("SecondaryDNS"+($column.Name)) -Value $secondarylookup[0].($column.Name)
                     }
                 }
         }
@@ -81,14 +81,15 @@ function Get-Ipdetails {
             Import-Module ActiveDirectory
             #Get list of domains in forest
             $domains = (Get-ADForest).domains
-            $pos = $lookup.NameHost.IndexOf(".")
-            $domainpart = $lookup.NameHost.Substring($pos+1)
+            if (!!$lookup)
+            {
+            $pos = $lookup[0].NameHost.IndexOf(".")
+            $domainpart = $lookup[0].NameHost.Substring($pos+1)
+            }
             #Check client host part against AD domains and will do direct domain lookup 
             if ($domains -contains $domainpart)
             {
-                #$filter = "'IPv4Address -eq "+'"'+$IP+'"'+"'"
                 $adlookup = Get-ADComputer -Filter {IPv4Address -eq $IP} -Server $domainpart
-                #$adlookup = Get-ADComputer -Filter ("DNSHostName -like "+'"'+($lookup.NameHost)+'"') -Server $domainpart
                 #Gets column names
                 $adlookupcolumns = $adlookup | Select-Object DistinguishedName,DNSHostName,Enabled,IPv4Address,Name,ObjectGUID,SamAccountName,SID | Get-Member -MemberType NoteProperty | Select-Object Name
                 #Adds columns and data to array
